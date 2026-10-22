@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "baseBranches": [
+    "main"
+  ],
+  "releaseBranches": [],
+  "requiredChecks": [
+    {
+      "name": "test",
+      "appId": 15368
+    }
+  ],
+  "review": {
+    "kind": "approval",
+    "logins": [
+      "reviewer-example"
+    ],
+    "minimum": 1
+  },
+  "mergeMethod": "squash"
+}

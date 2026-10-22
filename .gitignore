@@ -1,0 +1,9 @@
+# 檔案用途：排除本機依賴、秘密與驗證產物；所在層：根目錄；主要關聯：package.json、tests。
+node_modules/
+coverage/
+dist/
+*.tgz
+.env
+.env.*
+.DS_Store
+*.log

@@ -1,0 +1,43 @@
+# 檔案用途：唯讀為預設的 GitHub Actions 轉接；所在層：公開 action；主要關聯：examples/review-gate.yml、docs/security.md。
+name: ReviewLatch
+description: Check current PR review evidence using trusted code and policy.
+inputs:
+  repository:
+    description: GitHub owner/repository
+    required: true
+  pull-request:
+    description: Pull request number
+    required: true
+  config:
+    description: Trusted policy file path in the runner workspace
+    required: true
+  publish:
+    description: Explicitly publish a per-PR commit status (requires statuses write)
+    default: 'false'
+  locale:
+    description: Human-readable output language (en, zh, id)
+    default: en
+runs:
+  using: composite
+  steps:
+    - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+      with:
+        bun-version: '1.4.2'
+    - name: Evaluate review evidence
+      shell: bash
+      env:
+        REVIEWLATCH_ACTION_PATH: ${{ github.action_path }}
+        REVIEWLATCH_REPOSITORY: ${{ inputs.repository }}
+        REVIEWLATCH_PR: ${{ inputs.pull-request }}
+        REVIEWLATCH_CONFIG: ${{ inputs.config }}
+        REVIEWLATCH_PUBLISH: ${{ inputs.publish }}
+        REVIEWLATCH_LOCALE: ${{ inputs.locale }}
+      run: |
+        # 輸入經環境變數與 argv 傳入，不能當 shell 程式碼插值。
+        args=(gate "$REVIEWLATCH_PR" --repo "$REVIEWLATCH_REPOSITORY" --config "$REVIEWLATCH_CONFIG" --locale "$REVIEWLATCH_LOCALE")
+        case "$REVIEWLATCH_PUBLISH" in
+          true) args+=(--publish) ;;
+          false) ;;
+          *) exit 2 ;;
+        esac
+        bun --no-env-file "$REVIEWLATCH_ACTION_PATH/src/cli.ts" "${args[@]}"

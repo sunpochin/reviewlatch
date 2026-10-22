@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "repository": "example/project",
+  "number": 7,
+  "author": "author-example",
+  "state": "OPEN",
+  "draft": false,
+  "head": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "headBranch": "feature/example",
+  "base": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "baseBranch": "main",
+  "mergeable": "MERGEABLE",
+  "mergeState": "CLEAN",
+  "lastBaseChange": null,
+  "checks": [
+    {
+      "name": "test",
+      "state": "SUCCESS",
+      "appId": 15368
+    }
+  ],
+  "reviews": [
+    {
+      "login": "reviewer-example",
+      "state": "APPROVED",
+      "commit": "cccccccccccccccccccccccccccccccccccccccc",
+      "body": "",
+      "at": "2026-01-02T00:00:00.000Z"
+    }
+  ],
+  "threads": [],
+  "dependents": []
+}

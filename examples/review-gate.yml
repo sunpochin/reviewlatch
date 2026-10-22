@@ -1,0 +1,34 @@
+# 檔案用途：消費端可複製的手動審查檢查；所在層：範例，非自動啟用；主要關聯：action.yml、docs/security.md。
+name: ReviewLatch manual review check
+on:
+  workflow_dispatch:
+    inputs:
+      pull_request:
+        description: Pull request number to inspect
+        required: true
+        type: string
+# 為什麼使用手動入口：不把 PR 提供的程式碼放進持有寫入 token 的執行環境。
+permissions:
+  contents: read
+  pull-requests: read
+  checks: read
+  statuses: read
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+      # Replace this placeholder with a reviewed full commit SHA from ReviewLatch.
+      - uses: sunpochin/reviewlatch@REPLACE_WITH_REVIEWED_COMMIT_SHA
+        with:
+          repository: ${{ github.repository }}
+          pull-request: ${{ inputs.pull_request }}
+          config: .github/reviewlatch.json
+          publish: 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+# To opt into status publication, change statuses to write and publish to 'true'.
+# Configure .github/reviewlatch.json on the default branch before running this.

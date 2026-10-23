@@ -112,3 +112,15 @@ test('unparseable timestamps cannot silently discard failure evidence', () => {
     }
   }
 });
+
+test('sub-millisecond instants cannot collapse into an input-order tie', () => {
+  const failure = { name: 'test', startedAt: '2026-01-01T00:00:00.0009Z', outcome: 'fail' };
+  const success = { name: 'test', startedAt: '2026-01-01T00:00:00.0001Z', outcome: 'pass' };
+  // Date.parse 只保留毫秒；明確拒絕超出可表示精度的證據，不能假裝兩者同時。
+  for (const checks of [[failure, success], [success, failure], [failure]]) {
+    expect(() => latestChecksByName(checks)).toThrow('unsupported-check-timestamp-precision');
+  }
+  const exact = { ...success, startedAt: '2026-01-01T00:00:00.123000Z' };
+  const equivalent = { ...failure, startedAt: '2026-01-01T01:00:00.123+01:00' };
+  expect(latestChecksByName([exact, equivalent])).toEqual([equivalent]);
+});

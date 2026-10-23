@@ -33,6 +33,9 @@ export function latestChecksByName<T extends { name: string; startedAt: string |
     // 時區與小數精度會讓字串排序顛倒；無效時間必須中止，避免丟掉可能失敗的證據。
     const time = check.startedAt === null ? null : Date.parse(check.startedAt);
     if (check.startedAt !== null && !Number.isFinite(time)) throw new RangeError('invalid-check-timestamp');
+    // Date.parse 會截掉毫秒以後的小數；無法精確表示就拒絕，不能把新失敗當成與舊成功同時。
+    // 超過三位但全為補零仍是可精確表示的時間，因此不必拒絕等價的 ISO 表示法。
+    if (check.startedAt !== null && /\.\d{3}\d*[1-9]/.test(check.startedAt)) throw new RangeError('unsupported-check-timestamp-precision');
     const previous = latest.get(check.name);
     if (!previous) {
       latest.set(check.name, { check, time });

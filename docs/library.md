@@ -18,3 +18,5 @@ For a compatibility migration, `inspectPrState` accepts an explicit `{ allow: [.
 The primitives are **not a complete merge gate**. The caller must keep current-review evidence, required CI, issuer checks, release authorization, complete pagination, revision rechecks and expected-head mutation binding. Do not invent approvals or replace missing evidence with empty arrays to use the full evaluator. A name-only rollup must not let a same-named check run impersonate a trusted commit status.
 
 Vendored integrations should retain the upstream license and provenance, record version and exact commit, copy upstream files without local edits, and verify their hashes. Upgrades should replace the pinned snapshot through review and rerun behavior-parity fixtures.
+
+Timestamp ordering supports exact millisecond precision. A nonzero fractional digit beyond milliseconds throws `RangeError('unsupported-check-timestamp-precision')` before selection, since JavaScript would otherwise truncate it and could mistake a newer failure for a tie. Extra trailing fractional zeros are accepted because they do not change the instant.

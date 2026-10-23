@@ -5,6 +5,7 @@
 
 - Export PR-state and thread-completeness inspection plus check-rollup classification and latest-result selection.
 - Keep compatibility options explicit; the complete evaluator and CLI retain strict defaults.
+- Reject ambiguous rules and non-boolean opt-ins; compare check timestamps chronologically and stop on unparseable evidence.
 - Document immutable source vendoring and the caller's remaining evidence and authorization responsibilities.
 
 ## 0.1.0 — Initial extraction

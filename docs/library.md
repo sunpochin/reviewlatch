@@ -9,11 +9,11 @@ Pin an immutable repository commit when importing or vendoring ReviewLatch. The 
 | --- | --- |
 | `reviewedCommit(body)` | Extract a 7–40 character hexadecimal reviewed-commit marker; caller must verify author, timestamp and commit identity. |
 | `inspectPrState(facts, policy)` | Check open/draft/base and, in merge mode, mergeability. Defaults allow only `MERGEABLE` and `CLEAN`; unknown states block. |
-| `inspectThreads(unresolved, complete)` | Report remaining threads and incomplete/invalid counts. Does not fetch evidence. |
+| `inspectThreads(unresolved, complete)` | Report remaining threads and incomplete/invalid counts. Only literal boolean `true` confirms completeness. Does not fetch evidence. |
 | `checkOutcome(rollup, options)` | Distinguish pass/fail/pending/skipped. Neutral is failure unless `neutralIsSuccess: true` is explicit. Unknown rollup types fail. |
-| `latestChecksByName(checks)` | Select latest timestamp per name, last input wins ties, missing timestamp sorts earliest. Does not validate issuer or required checks. |
+| `latestChecksByName(checks)` | Compare parsed timestamps chronologically, last input wins equal instants, `null` sorts earliest. An unparseable timestamp throws `RangeError('invalid-check-timestamp')`; callers must stop instead of substituting empty evidence. Does not validate issuer or required checks. |
 
-For a compatibility migration, `inspectPrState` accepts an explicit `{ allow: [...] }` or `{ deny: [...] }` rule for `mergeable` and `mergeState`. Deny lists preserve legacy behavior but accept unknown future states: prefer allow lists for new integrations. `purpose: 'review'` deliberately omits mergeability checks. These options do not alter `evaluate`, its required-check semantics, or the CLI.
+For a compatibility migration, `inspectPrState` accepts an explicit `{ allow: [...] }` or `{ deny: [...] }` rule for `mergeable` and `mergeState`. Each rule must contain exactly one list of strings; ambiguous or malformed rules block. Deny lists preserve legacy behavior but accept unknown future states: prefer allow lists for new integrations. `purpose: 'review'` deliberately omits mergeability checks. These options do not alter `evaluate`, its required-check semantics, or the CLI. Boolean compatibility options require literal `true`; truthy strings or numbers never grant an exception.
 
 The primitives are **not a complete merge gate**. The caller must keep current-review evidence, required CI, issuer checks, release authorization, complete pagination, revision rechecks and expected-head mutation binding. Do not invent approvals or replace missing evidence with empty arrays to use the full evaluator. A name-only rollup must not let a same-named check run impersonate a trusted commit status.
 

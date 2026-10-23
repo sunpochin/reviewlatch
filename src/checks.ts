@@ -19,7 +19,8 @@ export function checkOutcome(item: CheckRollup, options: { neutralIsSuccess?: bo
   if (item.__typename !== 'CheckRun') return 'fail';
   if ((item.status ?? '').toUpperCase() !== 'COMPLETED') return 'pending';
   const conclusion = (item.conclusion ?? '').toUpperCase();
-  if (conclusion === 'SUCCESS' || (conclusion === 'NEUTRAL' && options.neutralIsSuccess)) return 'pass';
+  // JSON 呼叫端的 "false" 也是 truthy，只有真正的布林 true 才算明確放寬政策。
+  if (conclusion === 'SUCCESS' || (conclusion === 'NEUTRAL' && options.neutralIsSuccess === true)) return 'pass';
   if (conclusion === 'SKIPPED') return 'skipped';
   return 'fail';
 }
@@ -27,10 +28,13 @@ export function checkOutcome(item: CheckRollup, options: { neutralIsSuccess?: bo
 // 同時刻維持輸入最後一筆，缺時間視為最早；只供明確採「最新 run」政策的 adapter 使用。
 // 嚴格 evaluator 仍檢查所有同名必要結果，不能偷偷換成只看最新而放行衝突證據。
 export function latestChecksByName<T extends { name: string; startedAt: string | null }>(checks: readonly T[]): T[] {
-  const latest = new Map<string, T>();
+  const latest = new Map<string, { check: T; time: number }>();
   for (const check of checks) {
+    // 時區與小數精度會讓字串排序顛倒；無效時間必須中止，避免丟掉可能失敗的證據。
+    const time = check.startedAt === null ? -Infinity : Date.parse(check.startedAt);
+    if (check.startedAt !== null && !Number.isFinite(time)) throw new RangeError('invalid-check-timestamp');
     const previous = latest.get(check.name);
-    if (!previous || (check.startedAt ?? '') >= (previous.startedAt ?? '')) latest.set(check.name, check);
+    if (!previous || time >= previous.time) latest.set(check.name, { check, time });
   }
-  return [...latest.values()].sort((a, b) => a.name.localeCompare(b.name));
+  return [...latest.values()].map(({ check }) => check).sort((a, b) => a.name.localeCompare(b.name));
 }

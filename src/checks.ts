@@ -25,16 +25,22 @@ export function checkOutcome(item: CheckRollup, options: { neutralIsSuccess?: bo
   return 'fail';
 }
 
-// 同時刻維持輸入最後一筆，缺時間視為最早；只供明確採「最新 run」政策的 adapter 使用。
+// 同時刻維持輸入最後一筆；同名有缺時間的結果就無法排序，不能猜測它是較舊的一筆。
 // 嚴格 evaluator 仍檢查所有同名必要結果，不能偷偷換成只看最新而放行衝突證據。
 export function latestChecksByName<T extends { name: string; startedAt: string | null }>(checks: readonly T[]): T[] {
-  const latest = new Map<string, { check: T; time: number }>();
+  const latest = new Map<string, { check: T; time: number | null }>();
   for (const check of checks) {
     // 時區與小數精度會讓字串排序顛倒；無效時間必須中止，避免丟掉可能失敗的證據。
-    const time = check.startedAt === null ? -Infinity : Date.parse(check.startedAt);
+    const time = check.startedAt === null ? null : Date.parse(check.startedAt);
     if (check.startedAt !== null && !Number.isFinite(time)) throw new RangeError('invalid-check-timestamp');
     const previous = latest.get(check.name);
-    if (!previous || time >= previous.time) latest.set(check.name, { check, time });
+    if (!previous) {
+      latest.set(check.name, { check, time });
+      continue;
+    }
+    // queued 重跑可以尚無 startedAt；直接丟掉它會讓舊成功遮住仍在等待的 CI。
+    if (time === null || previous.time === null) throw new RangeError('ambiguous-check-timestamps');
+    if (time >= previous.time) latest.set(check.name, { check, time });
   }
   return [...latest.values()].map(({ check }) => check).sort((a, b) => a.name.localeCompare(b.name));
 }

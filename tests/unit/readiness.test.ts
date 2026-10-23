@@ -39,11 +39,20 @@ test('ambiguous and malformed state rules block instead of ignoring a restrictio
   // 型別檢查也必須拒絕同時指定；執行期仍需防範未經型別檢查的 JSON。
   // @ts-expect-error allow and deny are mutually exclusive
   const ambiguous: StateRule = { allow: ['MERGEABLE', 'CLEAN'], deny: ['MERGEABLE', 'CLEAN'] };
-  const invalidRules = [ambiguous, ...JSON.parse('[{}, {"allow":"MERGEABLE CLEAN"}, {"deny":[] ,"allow":null}, {"deny":[null]}]')];
+  const invalidRules = [ambiguous, ...JSON.parse('[null, {}, {"allow":"MERGEABLE CLEAN"}, {"deny":[] ,"allow":null}, {"deny":[null]}]')];
   for (const rule of invalidRules) {
     expect(inspectPrState(snapshot(), { baseBranches: ['main'], mergeable: rule, mergeState: rule })).toEqual([
       { code: 'mergeable', detail: 'MERGEABLE' }, { code: 'mergeState', detail: 'CLEAN' },
     ]);
+  }
+});
+
+test('compatibility deny rules cannot accept missing or malformed state evidence', () => {
+  const compatibility = { baseBranches: ['main'], mergeable: { deny: ['CONFLICTING'] }, mergeState: { deny: ['BLOCKED'] } };
+  for (const missing of [...JSON.parse('[null, "", " ", 0, false, {}, []]'), undefined]) {
+    expect(inspectPrState({ ...snapshot(), mergeable: missing, mergeState: missing }, compatibility).map(reason => reason.code))
+      .toEqual(['mergeable', 'mergeState']);
+    if (missing !== false) expect(inspectPrState({ ...snapshot(), draft: missing }, compatibility).map(reason => reason.code)).toEqual(['draft']);
   }
 });
 
@@ -64,8 +73,8 @@ test('latest selection is deterministic, stable on ties and leaves input untouch
   const checks = [
     { name: 'z', startedAt: '2026-01-02', value: 'new' },
     { name: 'z', startedAt: '2026-01-01', value: 'old' },
-    { name: 'a', startedAt: null, value: 'first' },
-    { name: 'a', startedAt: null, value: 'last' },
+    { name: 'a', startedAt: '2026-01-02', value: 'first' },
+    { name: 'a', startedAt: '2026-01-02', value: 'last' },
   ];
   expect(latestChecksByName(checks)).toEqual([checks[3], checks[0]]);
   expect(checks.map((c) => c.value)).toEqual(['new', 'old', 'first', 'last']);
@@ -79,10 +88,19 @@ test('latest selection compares instants across offsets and fractional precision
     { name: 'fraction', startedAt: '2026-01-01T00:00:00.100Z', outcome: 'fail' },
     { name: 'tie', startedAt: '2026-01-01T01:00:00+01:00', outcome: 'pass' },
     { name: 'tie', startedAt: '2026-01-01T00:00:00.000Z', outcome: 'fail' },
-    { name: 'missing', startedAt: '2026-01-01T00:00:00Z', outcome: 'fail' },
-    { name: 'missing', startedAt: null, outcome: 'pass' },
+    { name: 'missing', startedAt: null, outcome: 'pending' },
   ];
   expect(latestChecksByName(checks)).toEqual([checks[3], checks[6], checks[1], checks[5]]);
+});
+
+test('duplicate runs with missing times are incomplete evidence in either order', () => {
+  const success = { name: 'test', startedAt: '2026-01-01T00:00:00Z', status: 'COMPLETED', conclusion: 'SUCCESS' };
+  const queued = { name: 'test', startedAt: null, status: 'QUEUED', conclusion: null };
+  // 尚未開始的重跑沒有時間；無法判定先後時，不能猜測它早於已完成的成功結果。
+  for (const checks of [[success, queued], [queued, success], [queued, queued]]) {
+    expect(() => latestChecksByName(checks)).toThrow('ambiguous-check-timestamps');
+  }
+  expect(latestChecksByName([queued]).map(check => checkOutcome({ __typename: 'CheckRun', ...check }))).toEqual(['pending']);
 });
 
 test('unparseable timestamps cannot silently discard failure evidence', () => {

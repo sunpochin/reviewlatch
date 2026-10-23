@@ -13,6 +13,8 @@ export type StatePolicy = {
 export type StateReason = { code: 'closed' | 'draft' | 'base' | 'mergeable' | 'mergeState'; detail?: string };
 
 function rejected(value: string, rule: StateRule): boolean {
+  // deny 只列出已知禁用狀態；缺少狀態不是新的合法值，必須先擋下不完整證據。
+  if (typeof value !== 'string' || !value.trim()) return true;
   // 不可讓互相矛盾的規則因欄位優先順序而放行；未經 TS 檢查的設定也要拒絕。
   if (!rule || typeof rule !== 'object') return true;
   const allow = 'allow' in rule;
@@ -26,11 +28,12 @@ function rejected(value: string, rule: StateRule): boolean {
 export function inspectPrState(pr: PrState, policy: StatePolicy): StateReason[] {
   const reasons: StateReason[] = [];
   if (pr.state !== 'OPEN') reasons.push({ code: 'closed' });
-  if (pr.draft) reasons.push({ code: 'draft' });
+  if (pr.draft !== false) reasons.push({ code: 'draft' });
   if (!policy.baseBranches.includes(pr.baseBranch)) reasons.push({ code: 'base', detail: pr.baseBranch });
   if (policy.purpose !== 'review') {
-    if (rejected(pr.mergeable, policy.mergeable ?? { allow: ['MERGEABLE'] })) reasons.push({ code: 'mergeable', detail: pr.mergeable });
-    if (rejected(pr.mergeState, policy.mergeState ?? { allow: ['CLEAN'] })) reasons.push({ code: 'mergeState', detail: pr.mergeState });
+    // 只為省略的政策補預設；JSON 明示的 null 是無效規則，不能當作未設定。
+    if (rejected(pr.mergeable, policy.mergeable === undefined ? { allow: ['MERGEABLE'] } : policy.mergeable)) reasons.push({ code: 'mergeable', detail: pr.mergeable });
+    if (rejected(pr.mergeState, policy.mergeState === undefined ? { allow: ['CLEAN'] } : policy.mergeState)) reasons.push({ code: 'mergeState', detail: pr.mergeState });
   }
   return reasons;
 }

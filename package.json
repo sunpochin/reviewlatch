@@ -1,6 +1,6 @@
 {
   "name": "reviewlatch",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Review-aware delivery gates for coding agents",
   "type": "module",
   "license": "MIT",

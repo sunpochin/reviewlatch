@@ -26,6 +26,7 @@ const messages = {
   reviewMissing: { en: 'Not enough trusted reviews cover the current head after the last retarget.', zh: '目前版本在最近改目標分支後，尚未獲得足夠的可信審查。', id: 'Revisi saat ini belum mendapat cukup tinjauan tepercaya setelah perubahan cabang tujuan terakhir.' },
   changesRequested: { en: 'A reviewer still requests changes.', zh: '仍有審查者要求修改。', id: 'Masih ada peninjau yang meminta perubahan.' },
   threads: { en: 'Unresolved review threads remain.', zh: '仍有未結案的審查討論。', id: 'Masih ada diskusi tinjauan yang belum selesai.' },
+  threadsIncomplete: { en: 'Review thread evidence is incomplete.', zh: '審查討論的證據不完整。', id: 'Bukti diskusi tinjauan belum lengkap.' },
   dependents: { en: 'Other open PRs depend on this branch; handle the stack before merging.', zh: '其他開啟的 PR 依賴此分支，請先處理疊接順序。', id: 'PR terbuka lain bergantung pada cabang ini; atur urutannya sebelum menggabungkan.' },
   help: {
     en: 'ReviewLatch — verify review evidence before delivery.\nCommands: check --snapshot FILE | status N --repo OWNER/REPO | threads N --repo OWNER/REPO | merge N --repo OWNER/REPO | gate N --repo OWNER/REPO\nAll commands require --config FILE. Options: --json, --locale en|zh|id.\nmerge: dry run by default; --execute --expect-head SHA to write; --release only with owner authorization.\ngate: review evidence only; --publish writes a per-PR commit status. It never merges or requests a review.',

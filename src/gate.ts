@@ -4,9 +4,10 @@
 */
 import type { Review, Snapshot } from './model.ts';
 import type { Policy } from './policy.ts';
+import { inspectPrState, inspectThreads } from './readiness.ts';
 
 export type ReasonCode = 'closed' | 'draft' | 'base' | 'release' | 'mergeable' | 'mergeState' |
-  'checkMissing' | 'checkFailed' | 'reviewMissing' | 'changesRequested' | 'threads' | 'dependents';
+  'checkMissing' | 'checkFailed' | 'reviewMissing' | 'changesRequested' | 'threads' | 'threadsIncomplete' | 'dependents';
 export type Reason = { code: ReasonCode; detail?: string };
 export type Decision = { ready: boolean; reasons: Reason[]; reviewers: string[] };
 
@@ -34,14 +35,12 @@ export function currentReviewers(snapshot: Snapshot, policy: Policy): string[] {
 export function evaluate(snapshot: Snapshot, policy: Policy, options: { releaseAuthorized?: boolean; purpose?: 'merge' | 'review' } = {}): Decision {
   const reasons: Reason[] = [];
   const add = (code: ReasonCode, detail?: string) => reasons.push(detail ? { code, detail } : { code });
-  if (snapshot.state !== 'OPEN') add('closed');
-  if (snapshot.draft) add('draft');
-  if (!policy.baseBranches.includes(snapshot.baseBranch)) add('base', snapshot.baseBranch);
   const merging = options.purpose !== 'review';
+  const stateReasons = inspectPrState(snapshot, { baseBranches: policy.baseBranches, purpose: options.purpose });
+  reasons.push(...stateReasons.filter((r) => r.code !== 'mergeable' && r.code !== 'mergeState'));
   if (merging && policy.releaseBranches.includes(snapshot.baseBranch) && !options.releaseAuthorized) add('release', snapshot.baseBranch);
-  if (merging && snapshot.mergeable !== 'MERGEABLE') add('mergeable', snapshot.mergeable);
   // review status 若等待自己的 required check 變綠會形成死結；合併命令才檢查完整 CI／GitHub 狀態。
-  if (merging && snapshot.mergeState !== 'CLEAN') add('mergeState', snapshot.mergeState);
+  reasons.push(...stateReasons.filter((r) => r.code === 'mergeable' || r.code === 'mergeState'));
   for (const required of merging ? policy.requiredChecks : []) {
     const found = snapshot.checks.filter((c) => c.name === required.name && (required.appId === null || required.appId === c.appId));
     if (!found.length) add('checkMissing', required.name);
@@ -56,7 +55,7 @@ export function evaluate(snapshot: Snapshot, policy: Policy, options: { releaseA
   const reviewers = currentReviewers(snapshot, policy);
   if (reviewers.length < policy.review.minimum) add('reviewMissing');
   const unresolved = snapshot.threads.filter((t) => !t.resolved);
-  if (unresolved.length) add('threads', String(unresolved.length));
+  reasons.push(...inspectThreads(unresolved.length, true));
   // 第一版不自動改別張 PR 的 base，避免合併刪分支時關閉下游 PR。
   if (merging && snapshot.dependents.length) add('dependents', snapshot.dependents.join(', '));
   return { ready: reasons.length === 0, reasons, reviewers };

@@ -1,6 +1,13 @@
 <!-- 檔案用途：公開版本變更；所在層：根目錄；主要關聯：README.md、package.json。 -->
 # Changelog
 
+## 0.2.0 — Composable pure API
+
+- Export PR-state and thread-completeness inspection plus check-rollup classification and latest-result selection.
+- Keep compatibility options explicit; the complete evaluator and CLI retain strict defaults.
+- Reject malformed rules, missing states and non-boolean opt-ins; compare check timestamps chronologically and stop on unparseable, unrepresentable or ambiguous duplicate evidence.
+- Document immutable source vendoring and the caller's remaining evidence and authorization responsibilities.
+
 ## 0.1.0 — Initial extraction
 
 - Configurable exact-head review and merge policy, including trusted reviewers and check App IDs.

@@ -7,6 +7,7 @@ Read only the area you are changing.
 | --- | --- | --- |
 | Data validation | `src/model.ts`, `src/policy.ts` | [Configuration](docs/configuration.md), `tests/unit/gate.test.ts` |
 | Pure decision | `src/gate.ts` | [Security](docs/security.md), `tests/unit/gate.test.ts` |
+| Composable library API | `src/readiness.ts`, `src/checks.ts`, `src/index.ts` | [Library integration](docs/library.md), `tests/unit/readiness.test.ts` |
 | GitHub collection | `src/github.ts` | [Security](docs/security.md), `tests/unit/github.test.ts` |
 | Mutations | `src/delivery.ts` | [Security](docs/security.md), `tests/unit/delivery.test.ts` |
 | CLI and language | `src/cli.ts`, `src/i18n.ts` | README, `tests/unit/cli.test.ts` |

@@ -66,6 +66,6 @@ The [agent workflow](docs/agent-workflow.md) includes a portable instruction blo
 
 ## Status
 
-Initial `0.1.0` implementation. Tests use synthetic GitHub responses and offline fixtures, including pagination and merge races. A real authenticated merge is not part of the automated test suite. Read [TECHNICAL.md](TECHNICAL.md) before extending the adapter.
+Version `0.2.0` adds a [composable pure API](docs/library.md) for integrations that keep their own delivery policy. Tests use synthetic GitHub responses and offline fixtures, including pagination and merge races. A real authenticated merge is not part of the automated test suite. Read [TECHNICAL.md](TECHNICAL.md) before extending the adapter.
 
 MIT © 2026 sunpochin. See [NOTICE.md](NOTICE.md) for provenance.
